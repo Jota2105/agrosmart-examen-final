@@ -109,27 +109,47 @@ lo fuera? (piensa en la restricción `unique` de `nombre_producto`)
 **3.1** ¿Por qué tienes **dos** clases (`ProductoEntity` y `Producto`) en lugar de una?
 ¿Qué te impide hacer inmutable directamente la entidad de Hibernate?
 
->
+> Porque no hacen lo mismo, la clase Entity es mutable y cuenta con setters para que Hibernate
+> pueda cerar los registros en la tabla, por otro lado, la clase Producto representa el
+> modelo de dominio que utiliza el flujo reactivo, es clase final, sin setters y sus atributos 
+> en private final.
 
 **3.2** Escribe el código exacto de **tus dos** copias defensivas e indica en qué línea
 está cada una.
 
 ```java
 
+this.correosNotificacion = new ArrayList<>(correosNotificacion);
+
+
+return Collections.unmodifiableList(new ArrayList<>(correosNotificacion));
+
 ```
+> Se encuentran en las lineas: 22 y 42, respectivamente.
 
 **3.3** ¿Por qué la copia defensiva **solo en el getter** no sería suficiente? Describe
 el ataque concreto que quedaría abierto sobre **tu** clase.
 
->
+> No es suficiente porque la lista que recibe el constructor seguiria siendo la misma referencia dentro de Producto,
+> por ejemplo, al hacer un producto con uns lista `correos`, otro codigo podria ejcutar `correos.clear` y vaciar
+> el estado del producto.
 
 **3.4** ¿Cómo implementaste `A_MAYUSCULAS` para no mutar el `Producto` recibido?
 
 ```java
 
+public static final Function<Producto, Producto> A_MAYUSCULAS =
+        producto -> new Producto(
+                producto.getId(),
+                producto.getNombre().toUpperCase(),
+                producto.getCategoria(),
+                producto.getPrecioUsd(),
+                producto.getCorreosNotificacion()
+        );
 ```
 
----
+--- Use Function que recibe un Producto y devuelve otro Producto, la lambda
+toma el producto y construye uno nuevo y transforma el nombre con .toUpperCase().
 
 ## Fase 4 — Servicio reactivo y aislamiento del bloqueo
 
