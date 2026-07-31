@@ -17,10 +17,10 @@
 
 ## Datos
 
-- **Nombre:**
-- **Cédula:**
-- **NN (dos últimos dígitos):**
-- **Categoría asignada (según el último dígito):**
+- **Nombre:** Juan Diego Albarracin Hidalgo
+- **Cédula:** 1753573334
+- **NN (dos últimos dígitos):** 34
+- **Categoría asignada (según el último dígito):** Banano
 
 ---
 
@@ -28,23 +28,34 @@
 
 **1.1** ¿Qué archivo activa el perfil `prod` y qué línea exacta lo hace?
 
->
+> El perfil de `prod` se activa en el archivo `src/main/resources/application.properties` 
+> mediante `spring.profiles.active=prod`, con esto hice que Spring Boot cargue
+> tambien la configuracion definida en `appilcation-prod.properties`
 
 **1.2** Pega la línea del log de arranque donde se ve tu puerto y el perfil activo.
 
 ```
-
+2026-07-31T00:36:14.149-05:00  INFO 22256 --- [agrosmart] [           main] e.e.espe.agrosmart.AgrosmartApplication  : The following 1 profile is active: "prod"
+2026-07-31T00:36:17.812-05:00  INFO 22256 --- [agrosmart] [           main] o.s.boot.reactor.netty.NettyWebServer    : Netty started on port 8134 (http)
+2026-07-31T00:36:17.815-05:00  INFO 22256 --- [agrosmart] [           main] e.e.espe.agrosmart.AgrosmartApplication  : Started AgrosmartApplication
 ```
 
 **1.3** ¿Qué habría pasado si dejabas `ddl-auto=create-drop` en lugar de `update`?
 Responde pensando en tus datos sembrados.
 
->
+> Si configuraba `spring.jpa.hibernate.ddl-auto=create-drop`, Hibernate hubiese creado nuevamente
+> el esquema al iniciar y eliminarlo al cerrar la app. Dentro de mi proyecto provocaria que
+> luego de implementar la siembra de los productos de Banano, los registros en mi tabla
+> desaparecerian al dejar de correr la aplicacion, entonces con `update` hice que se pueda conservar
+> cualquier registro de ejecucion, y que hibernate solo actualice sin destruir.
 
 **1.4** ¿Levantaste PostgreSQL con `compose.yaml` (Opción A) o con una instalación local
 (Opción B)? ¿Qué ventaja tiene la que elegiste?
 
->
+> Levante Postgres con la opcion A, es decir, mediante contenedor con `compose.yaml`, aqui declare la base 
+> `agrosmart` y el puerto 5432, mismo que tuve que cortar el servicio de postgres local ya que estaba interfiriendo,
+> y esta alternativa hace el entorno mas reproducible y escalable , asi Spring Boot obtiene la conexion desde el
+> Compose Support, sin una instalacion local, ni colocar propiedades en `spring.datasource`.
 
 ---
 
