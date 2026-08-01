@@ -15,5 +15,5 @@ public final class ProductoFilters {
 
     public static final Consumer<Producto> LOG_PRODUCTO = producto -> System.out.println("Producto procesado -> id: "+ producto.getId()+ ", nombre: "+ producto.getNombre());
     public static final Function<Producto, Producto> A_MAYUSCULAS = producto -> new Producto(
-            producto.getId(), producto.getNombre().toUpperCase(), producto.getCategeoria(), producto.getPrecioUsd(), producto.getCorreosNotificacion());
+            producto.getId(), producto.getNombre().toUpperCase(), producto.getCategoria(), producto.getPrecioUsd(), producto.getCorreosNotificacion());
 }

@@ -355,28 +355,75 @@ Content-Length: 127
 **7.1** Pega la salida real de tus pruebas (`./mvnw test` o `./gradlew test`).
 
 ```
+------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running ec.edu.espe.agrosmart.domain.ProductoFiltersTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.074 s -- in ec.edu.espe.agrosmart.domain.ProductoFiltersTest
+[INFO] Running ec.edu.espe.agrosmart.domain.ProductoTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in ec.edu.espe.agrosmart.domain.ProductoTest
+[INFO] Running ec.edu.espe.agrosmart.service.ProductoServiceTest
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (C:\Users\JUAN DIEGO\.m2\repository\net\bytebuddy\byte-buddy-agent\1.18.10\byte-buddy-agent-1.18.10.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+Producto procesado -> id: 1, nombre: BANANO ORGANICO CAVENDISH
+Producto procesado -> id: 2, nombre: BANANO PREMIUM DE EXPORTACION
+Producto procesado -> id: 3, nombre: BANANO ECOLOGICO SELECCIONADO
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.241 s -- in ec.edu.espe.agrosmart.service.ProductoServiceTest
+[INFO] Running ec.edu.espe.agrosmart.service.PublicidadServiceTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.066 s -- in ec.edu.espe.agrosmart.service.PublicidadServiceTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  5.739 s
+[INFO] Finished at: 2026-07-31T21:35:31-05:00
+[INFO] ------------------------------------------------------------------------
 
 ```
 
 **7.2** ¿Cuántos productos espera tu `expectNextCount(...)` y por qué ese número
 concreto? Relaciónalo con tu semilla.
 
->
+> En ProductoServiceTest, mi test `obtenerProductosComercializables_conTresValidosYDosInvalidos_debeEmitirTresProductos` 
+> utiliza expectNextCount(3). Ese número corresponde a la siembra definida para mi proyecto: que eran
+> de los cinco productos de Banano, tres tienen precio mayor que cero y al menos un correo de notificación. 
+> Los otros dos son descartados por ProductoFilters.IS_VALID, porque uno tiene precio 0.00 y el otro tiene 
+> la cadena de correos vacía.
 
 **7.3** ¿Por qué mockeaste `ProductoRepository` en lugar de dejar que la prueba consulte
 PostgreSQL?
 
->
+> Mockeé `ProductoRepository` con Mockito porque quería probar solo el comportamiento de ProductoService. 
+> En mis pruebas configuro directamente las respuestas de findAll() y findById(), por lo que no necesito 
+> levantar el Docker ni conectarme a la db. Esto hace que los resultados sean rápidos y 
+> no dependan del estado real de ls tabla. La integración con Postgres ya fue comprobada mediante 
+> las evidencias de la Fase 2.
 
 **7.4** ¿Qué demuestra `assertNotSame` que `assertEquals` **no** demuestra en tu prueba
 de copia defensiva?
 
->
+> En ProductoTest, assertEquals demuestra que la lista entregada por `getCorreosNotificacion()` 
+> contiene los mismos correos esperados. En cambio, assertNotSame demuestra que la lista 
+> devuelta no es la misma instancia que la lista original entregada al constructor. Dos listas 
+> pueden tener igual su contenido y aun así ser objetos diferentes, esa diferencia de identidad 
+> es la que confirma que mi clase si realizó una copia defensiva.
 
 **7.5** ¿Por qué una prueba de un `Flux` que no llama a `verifyComplete()` (o a
 `verify()`) no está probando nada?
 
->
+> Los flujos de Reactor son lazy, por lo que `ProductoService.obtenerProductosComercializables()` 
+> no ejecuta repository.findAll() ni los operadores de despues solamente por construir el Flux. 
+> StepVerifier inicia la suscripción cuando se llama a verifyComplete() o verify(). 
+> Sin esa llamada final, no se consume el flujo, no se ejecutan las expectativas y 
+> la prueba podría terminar sin haber verificado ninguna emisión ni señal haber terminado.
 
 ---
 
