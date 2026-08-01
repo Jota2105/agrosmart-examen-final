@@ -156,6 +156,44 @@ toma el producto y construye uno nuevo y transforma el nombre con .toUpperCase()
 **4.1** Pega tu método `obtenerProductosComercializables()` completo.
 
 ```java
+public Flux<Producto> obtenerProductosComercializables() {
+
+        /* fromCallable difiere repository.findAll(): la consulta no se ejecuta al construir el Flux,
+          sino ya cuando un consumidor se suscribe. */
+        return Mono.fromCallable(repository::findAll)
+
+                /* JPA/Hibernate utiliza JDBC y bloquea el hilo mientras espera
+                  una respuesta de PostgreSQL. boundedElastic mueve esa operación fuera del event loop de Netty. */
+                .subscribeOn(Schedulers.boundedElastic())
+
+                /* repository.findAll() devuelve List<ProductoEntity>.
+                  flatMapMany convierte el Mono de la lista en un Flux que emite cada entidad individualmente.
+                 */
+                .flatMapMany(Flux::fromIterable)
+
+                /*  El Primer map: transforma cada ProductoEntity mutable en un Producto de dominio inmutable.
+                 */
+                .map(ProductoMapper::toDominio)
+
+                /* El segundo map: crea una nueva instancia de Producto
+                  con el nombre en MAYUSCULAS, sin mutar el original.
+                 */
+                .map(ProductoFilters.A_MAYUSCULAS)
+
+                /* Con filter se aplica la regla de comercialización:
+                  precio mayor que cero y lista de correos no vacía.
+                 */
+                .filter(ProductoFilters.IS_VALID)
+
+                /* doOnNext ejecuta el Consumer de trazabilidad.
+                  No modifica ni tampoco reemplaza el producto emitido. */
+                .doOnNext(ProductoFilters.LOG_PRODUCTO)
+
+                /* Si todos los registros fueron descartados por el filtro,
+                  defaultIfEmpty emite exactamente UN producto genérico. */
+                .defaultIfEmpty(PRODUCTO_GENERICO);
+    }
+
 
 ```
 
@@ -163,22 +201,45 @@ toma el producto y construye uno nuevo y transforma el nombre con .toUpperCase()
 `.subscribeOn(Schedulers.boundedElastic())` de ese método? Si lo probaste, indica qué
 hilo aparecía en el log antes y después.
 
->
+> En mi metodo de `obtenerProductosComercializables()` envolvi a repository.findAll() con
+> `Mono.fromCallable` y agregue el .subscribeOn(Schedulers.boundedElastic()), entonces
+> la llamada si accede a postgres mediante hibernate, por lo que el hilo espera mientras 
+> se hace la consulta. Sin `boundedElastic` si el flujo fuer suscrito desde el controller, la
+> consulta podria ejecutarse en un hilo reactor-http-nio, del event loop de Netty, y si esta bloqueado,
+> no podria atender otras solicitudes, entonces degrada toda la capacidad de respuesta de la aplicacion. No
+> lo probe de esa manera en la entrega entonces realmente no vi esa salida en el log.
 
 **4.3** ¿Por qué `Mono.fromCallable(...)` y no `Mono.just(repository.findAll())`?
 (pista: cuándo se ejecuta cada uno)
 
->
+> Usé `Mono.fromCallable(repository::findAll)` porque la invocación a
+> `repository.findAll()` queda diferida hasta la suscripción. Si hubiera escrito
+> `Mono.just(repository.findAll())`, Java habría ejecutado la consulta antes de
+> crear el Mono, por lo que el acceso bloqueante a Hibernate ocurriría
+> rapidamente, de inmediato, y no quedaría correctamente aislado por la cadena reactiva.
 
 **4.4** En **tu** código, ¿dónde usaste `defaultIfEmpty` y dónde `switchIfEmpty`, y por
 qué no son intercambiables en esos dos lugares?
 
->
+> En `obtenerProductosComercializables()` utilicé
+> `defaultIfEmpty(PRODUCTO_GENERICO)` después de aplicar
+> `ProductoFilters.IS_VALID`. Si los cinco registros de la mi tabla
+> fueran descartados, el Flux emitiría un producto
+> genérico. En `buscarPorId(Long id)` usé
+> `switchIfEmpty(Mono.error(new ProductoNoEncontradoException(id)))` porque el
+> Optional vacío debe transformarse en un error reactivo. No son intercambiables, el
+> `defaultIfEmpty` recibe un valor directo, mientras que `switchIfEmpty` cambia a
+> otro publisher, que en mi caso es un `Mono.error`.
 
 **4.5** ¿Por qué `doOnNext` no sirve para transformar el elemento, si aparentemente
 "recibe" el producto?
 
->
+> `doOnNext` recibe el producto únicamente para hacer el efecto de
+> trazabilidad definido en `ProductoFilters.LOG_PRODUCTO`. El operador devuelve
+> el mismo elemento y no utiliza el resultado del Consumer, que tambien retorna
+> `void`. Para transformar el producto utilicé `map` con
+> `ProductoFilters.A_MAYUSCULAS`, porque ese operador si toma un elemento y
+> devuelve otro.
 
 ---
 
