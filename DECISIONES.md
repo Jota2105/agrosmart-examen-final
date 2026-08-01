@@ -432,20 +432,63 @@ de copia defensiva?
 **8.1** Pega tu `git log --oneline --graph --all`.
 
 ```
-
+*   f7ac744 (HEAD -> feature/documentacion, origin/main, origin/HEAD, main) Merge pull request #7 from Jota2105/feature/pruebas
+|\  
+| * 363f6eb (origin/feature/pruebas, feature/pruebas) test: agrega pruebas del modelo, logica funcional, flujo reactivo e ia
+| * 228bd1e fix: corrige nombre del atributo categoria en modelo de dominio
+|/  
+*   f565a1e Merge pull request #6 from Jota2105/feature/api-reactiva
+|\  
+| * afdc3a7 (origin/feature/api-reactiva, feature/api-reactiva) feat: expone endpoints reactivos y de publicidad
+|/  
+*   f0ef611 Merge pull request #5 from Jota2105/feature/ia-langchain4j
+|\  
+| * ed3b2ba (origin/feature/ia-langchain4j, feature/ia-langchain4j) feat: integra langchain4j para publicidad de productos
+|/  
+*   80cc351 Merge pull request #4 from Jota2105/feature/servicio-reactivo
+|\  
+| * 32a9c6c (origin/feature/servicio-reactivo, feature/servicio-reactivo) feat: implementa servicio reactivo con boundedElastic y operadores
+|/  
+*   e4261e4 Merge pull request #3 from Jota2105/feature/modelo-inmutable
+|\  
+| * 75b0555 (origin/feature/modelo-inmutable, feature/modelo-inmutable) feat: agrega modelo inmutable de producto y logica funcional
+|/  
+*   85bfc21 Merge pull request #2 from Jota2105/feature/persistencia-jpa
+|\  
+| * 256bbde (origin/feature/persistencia-jpa, feature/persistencia-jpa) feat: agrega entidad jpa de productos y siembra de datos
+|/  
+*   d23b5eb Merge pull request #1 from Jota2105/feature/config-perfiles
+|\  
+| * 71293ae (origin/feature/config-perfiles, feature/config-perfiles) chore: configura perfil prod con postgresql y puerto propio
+|/  
+* b600fce chore:inicializa proyecto agrosmart con webflux, jpa y langchain4j
+* 2ca240c chore: registra identidad del examen
+* 9f8f991 Initial commit
 ```
 
 **8.2** ¿Qué fase te tomó más tiempo del previsto y por qué?
 
->
+> La fase que más tiempo me tomó fue la implementación y verificación del servicio reactivo. 
+> En ProductoService tuve que asegurarme de que tanto repository.findAll() como repository.findById() 
+> quedaran dentro de Mono.fromCallable(...) y se ejecutaran con Schedulers.boundedElastic(). Y tambien tuve un 
+> contratiempo al conectar hacia Postgres, ya que corria el puerto en la maquina local, y docker daba error
+> por estar ocupado, la solucion simplemente fue detener el servicio.
 
 **8.3** Si tuvieras 30 minutos más, ¿qué mejorarías **primero** de tu entrega y por qué
 esa y no otra?
 
->
+> Si tuviera 30 minutos adicionales, mejoraría primero el manejo centralizado de errores mediante @RestControllerAdvice 
+> y una estructura consistente para las respuestas de error. Elegiría esa mejora porque permitiría controlar de forma 
+> uniforme errores como ProductoNoEncontradoException, sin modificar la lógica reactiva principal ni comprometer las 
+> funcionalidades ya verificadas.
 
 **8.4** Declara honestamente qué herramientas consultaste durante el examen
 (documentación, apuntes, asistentes de IA) y para qué. **Esta declaración no descuenta
 puntaje**; su omisión o falsedad sí constituye falta de honestidad académica.
 
->
+> Durante el desarrollo consulté las instrucciones y anexos proporcionados por el docente en el repositorio, 
+> la documentación disponible desde mi entorno de desarrollo y un asistente de inteligencia artificial. 
+> Utilicé el asistente para comprender bien rl funcionamiento de los requisitos por fases, revisar errores de configuración, orientar 
+> la implementación de WebFlux, Project Reactor, LangChain4j, la sintaxixs de todas estas y como se declara cada cosa,  
+> Revisé y adapté cada propuesta a mi semilla personal, a mis clases y a las salidas 
+> reales obtenidas en mi aplicación
