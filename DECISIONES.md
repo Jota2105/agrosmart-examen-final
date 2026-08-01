@@ -249,22 +249,56 @@ qué no son intercambiables en esos dos lugares?
 
 ```java
 
+package ec.edu.espe.agrosmart.service;
+
+import dev.langchain4j.service.UserMessage;
+import dev.langchain4j.service.V;
+import dev.langchain4j.service.spring.AiService;
+
+@AiService
+public interface AgroSmartAIService {
+
+    @UserMessage("""
+            Redacta una frase publicitaria de máximo 100 caracteres para vender \
+            {{producto}} dirigido a {{audiencia}}.""")
+    String generarPublicidad(
+            @V("producto") String producto,
+            @V("audiencia") String audiencia
+    );
+}
+
 ```
 
 **5.2** ¿Qué hace `@V("producto")` y qué pasaría si lo quitaras dejando solo el
 parámetro?
 
->
+>En mi interfaz AgroSmartAIService, @V("producto") relaciona el parámetro 
+> Java producto con la variable {{producto}} del texto definido en @UserMessage. 
+> Cuando se invoca generarPublicidad, LangChain4j sustituye esa variable por el 
+> nombre que recibe. Si eliminara @V("producto"), el framework no tendría el mapeo 
+> para reemplazar correctamente {{producto}}, por lo que el prompt podría conservar 
+> la variable sin resolver o fallar durante la creación o ejecución.
 
 **5.3** ¿En qué archivo y con qué líneas configuraste el modelo? ¿Por qué **no** hizo
 falta declarar un `@Bean`?
 
->
+> Configuré el modelo en src/main/resources/application-prod.properties mediante 
+> las propiedades langchain4j.open-ai.chat-model.api-key=demo, 
+> langchain4j.open-ai.chat-model.model-name=gpt-4o-mini y 
+> langchain4j.open-ai.chat-model.timeout=30s, como se planteo en la guia, también habilité los registros 
+> de solicitudes y respuestas. No declaré un @Bean porque 
+> langchain4j-open-ai-spring-boot-starter lee esas propiedades y 
+> autoconfigura el modelo que utiliza la interfaz anotada con la etiqueta @AiService.
 
 **5.4** ¿Por qué la llamada a la IA también necesita `boundedElastic`, si no es una
 consulta a base de datos?
 
->
+> En mi clase `PublicidadService`, el método generarPublicidad llama a 
+> aiService.generarPublicidad(producto, audiencia). Aunque no utiliza JDBC, 
+> esa operación realiza una solicitud HTTP bloqueante y el hilo queda esperando 
+> la respuesta. La envolví con Mono.fromCallable(...) y .subscribeOn(Schedulers.boundedElastic()) 
+> para que esa espera no pase en los hilos reactor-http-nio. Además, 
+> añadí un timeout de 30 seg y onErrorResume para devolver un mensaje de respaldo si el proveedor falla.
 
 **5.5** Si tu proveedor devolvió un error durante el examen, pega el mensaje real y la
 respuesta que produjo tu `onErrorResume`.
