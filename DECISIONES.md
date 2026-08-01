@@ -304,6 +304,9 @@ consulta a base de datos?
 respuesta que produjo tu `onErrorResume`.
 
 ```
+No existio error, se esperaba un error al hacer funcionar el servicio de IA Langchain4j mediante
+api con curl, pero fue exitosa, devolvio: "Impulsa tus ventas con el delicioso Banano orgánico Cavendish. 
+Sabor, calidad y frescura garantizadas." 
 
 ```
 
@@ -314,17 +317,36 @@ respuesta que produjo tu `onErrorResume`.
 **6.1** Pega la salida real de tus cuatro `curl`.
 
 ```
+[1] curl.exe http://localhost:8134/api/productos
+[{"id":1,"nombre":"BANANO ORGANICO CAVENDISH","categeoria":"Banano","precioUsd":28.50,"correosNotificacion":["ventas@agrosmart.ec","exportacion@agrosmart.ec"]},{"id":2,"nombre":"BANANO PREMIUM DE EXPORTACION","categeoria":"Banano","precioUsd":34.90,"correosNotificacion":["mayoristas@agrosmart.ec"]},{"id":3,"nombre":"BANANO ECOLOGICO SELECCIONADO","categeoria":"Banano","precioUsd":31.75,"correosNotificacion":["comercial@agrosmart.ec","compras@agrosmart.ec"]}]
 
+[2] curl.exe http://localhost:8134/api/productos/1
+{"id":1,"nombre":"Banano organico Cavendish","categeoria":"Banano","precioUsd":28.50,"correosNotificacion":["ventas@agrosmart.ec","exportacion@agrosmart.ec"]}
+
+[3] curl.exe -i http://localhost:8134/api/productos/9999
+HTTP/1.1 404 Not Found
+Content-Type: application/json
+Content-Length: 127
+{"timestamp":"2026-08-01T01:34:31.095Z","path":"/api/productos/9999","status":404,"error":"Not Found","requestId":"c07d91ad-4"}
+
+[4] curl.exe "http://localhost:8134/api/agrosmart/publicidad?producto=Banano%20org%C3%A1nico%20Cavendish&audiencia=supermercados%20mayoristas"
+"Impulsa tus ventas con el delicioso Banano orgánico Cavendish. Sabor, calidad y frescura garantizadas."
 ```
 
 **6.2** ¿Cómo lograste que el id inexistente responda **404** y no 500?
 
->
+> En mi método ProductoService.buscarPorId(Long id), convertí el Optional vacío del repositorio en un Mono vacío mediante Mono.justOrEmpty. 
+> Después utilicé switchIfEmpty(Mono.error(new ProductoNoEncontradoException(id))) para emitir el error dentro del flujo reactivo. 
+> En mi clase ProductoNoEncontradoException agregué @ResponseStatus(HttpStatus.NOT_FOUND), entonces Spring WebFlux traduce esa excepción a HTTP 404. 
+> asi, la solicitud a /api/productos/9999 no termina como un error interno 500.
 
 **6.3** ¿Qué pasaría si tu controlador devolviera `List<Producto>` en lugar de
 `Flux<Producto>`? ¿Seguiría compilando? ¿Seguiría siendo no bloqueante?
 
->
+> El controlador podría compilar si modificara también el código para construir y devolver una List<Producto>, pero dejaría de conservar 
+> el contrato reactivo que se exige. Para obtener esa lista desde el Flux tendría que materializar el flujo y, si utilizara block() o collectList().block(), 
+> bloquearía el hilo que atiende la solicitud. En mi Controller AgroSmart devuelvo directamente Flux<Producto>, de modo que WebFlux se suscribe y 
+> transmite los elementos sin que el controlador extraiga los valores ni bloquee el event loop de Netty.
 
 ---
 
